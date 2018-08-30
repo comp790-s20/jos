@@ -205,9 +205,6 @@ grade:
 	  (echo "'make clean' failed.  HINT: Do you have another running instance of JOS?" && exit 1)
 	./grade-lab$(LAB) $(GRADEFLAGS)
 
-update:
-	git pull https://github.com/comp530h-f18/jos.git
-
 handin: realclean
 	@if [ `git status --porcelain| wc -l` != 0 ] ; then echo "\n\n\n\n\t\tWARNING: YOU HAVE UNCOMMITTED CHANGES\n\n    Consider committing any pending changes and rerunning make handin.\n\n\n\n"; fi
 	git tag -f -a lab$(LAB)-handin -m "Lab$(LAB) Handin"
