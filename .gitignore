@@ -18,3 +18,4 @@
 /prep*.tar.gz
 *~
 vivek.map
+vmm/guest/*
