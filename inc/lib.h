@@ -20,6 +20,9 @@
 #include <inc/fs.h>
 #include <inc/fd.h>
 #include <inc/args.h>
+#include <inc/malloc.h>
+#include <inc/ns.h>
+#include <inc/vmx.h>
 
 #define USED(x)		(void)(x)
 
@@ -57,6 +60,15 @@ int	sys_page_map(envid_t src_env, void *src_pg,
 int	sys_page_unmap(envid_t env, void *pg);
 int	sys_ipc_try_send(envid_t to_env, uint64_t value, void *pg, int perm);
 int	sys_ipc_recv(void *rcv_pg);
+unsigned int sys_time_msec(void);
+int sys_ept_map(envid_t srcenvid, void *srcva, envid_t guest, void* guest_pa, int perm);
+envid_t sys_env_mkguest(uint64_t gphysz, uint64_t gRIP);
+#ifndef VMM_GUEST
+void	sys_vmx_list_vms();
+int	sys_vmx_sel_resume(int i);
+int	sys_vmx_get_vmdisk_number();
+void	sys_vmx_incr_vmdisk_number();
+#endif
 
 // This must be inlined.  Exercise for reader: why?
 static __inline envid_t __attribute__((always_inline))
@@ -76,6 +88,10 @@ void	ipc_send(envid_t to_env, uint32_t value, void *pg, int perm);
 int32_t ipc_recv(envid_t *from_env_store, void *pg, int *perm_store);
 envid_t	ipc_find_env(enum EnvType type);
 
+#ifdef VMM_GUEST
+void	ipc_host_send(envid_t to_env, uint32_t value, void *pg, int perm);
+int32_t ipc_host_recv(void *pg);
+#endif
 
 // fork.c
 #define	PTE_SHARE	0x400
@@ -98,6 +114,7 @@ int	open(const char *path, int mode);
 int	ftruncate(int fd, off_t size);
 int	remove(const char *path);
 int	sync(void);
+int	copy(char *src, char *dest);
 
 
 // pageref.c

@@ -8,6 +8,8 @@
 
 #include <kern/console.h>
 #include <kern/picirq.h>
+#include <inc/vmx.h>
+#include <vmm/vmx.h>
 
 static void cons_intr(int (*proc)(void));
 static void cons_putc(int c);
@@ -360,6 +362,12 @@ kbd_proc_data(void)
 		cprintf("Rebooting!\n");
 		outb(0x92, 0x3); // courtesy of Chris Frost
 	}
+#ifdef VMM_GUEST
+	if (c == 0x1b) {
+		cprintf("ESC pressed\n");
+		asm("vmcall":"=a"(r): "0"(VMX_VMCALL_BACKTOHOST));
+	}
+#endif
 	return c;
 }
 

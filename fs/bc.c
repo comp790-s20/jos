@@ -50,8 +50,15 @@ bc_pgfault(struct UTrapframe *utf)
 	// LAB 5: your code here:
 
 
+#ifndef VMM_GUEST
 
 	// LAB 5: Your code here
+
+#else  // VMM GUEST
+
+	/* Your code here */
+	panic("Host read not implemented!\n");
+#endif // VMM_GUEST
 
 
 	if ((r = sys_page_map(0, addr, 0, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL)) < 0)

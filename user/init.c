@@ -66,5 +66,8 @@ umain(int argc, char **argv)
 		}
 		cprintf("init waiting\n");
 		wait(r);
+#ifdef VMM_GUEST
+		break;
+#endif
 	}
 }

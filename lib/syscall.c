@@ -117,3 +117,43 @@ sys_ipc_recv(void *dstva)
 	return syscall(SYS_ipc_recv, 1, (uint64_t)dstva, 0, 0, 0, 0);
 }
 
+unsigned int
+sys_time_msec(void)
+{
+	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
+}
+
+
+int
+sys_ept_map(envid_t srcenvid, void *srcva, envid_t guest, void* guest_pa, int perm) 
+{
+	return syscall(SYS_ept_map, 0, srcenvid, 
+		       (uint64_t)srcva, guest, (uint64_t)guest_pa, perm);
+}
+
+envid_t
+sys_env_mkguest(uint64_t gphysz, uint64_t gRIP) {
+	return (envid_t) syscall(SYS_env_mkguest, 0, gphysz, gRIP, 0, 0, 0);
+}
+#ifndef VMM_GUEST
+void
+sys_vmx_list_vms() {
+	syscall(SYS_vmx_list_vms, 0, 0, 
+		       0, 0, 0, 0);
+}
+
+int
+sys_vmx_sel_resume(int i) {
+	return syscall(SYS_vmx_sel_resume, 0, i, 0, 0, 0, 0);
+}
+int
+sys_vmx_get_vmdisk_number() {
+	return syscall(SYS_vmx_get_vmdisk_number, 0, 0, 0, 0, 0, 0);
+}
+
+void
+sys_vmx_incr_vmdisk_number() {
+	syscall(SYS_vmx_incr_vmdisk_number, 0, 0, 0, 0, 0, 0);
+}
+#endif
+

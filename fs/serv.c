@@ -73,13 +73,27 @@ openfile_alloc(struct OpenFile **o)
 		case 0:
 			if ((r = sys_page_alloc(0, opentab[i].o_fd, PTE_P|PTE_U|PTE_W)) < 0)
 				return r;
+#ifdef VMM_GUEST
+			opentab[i].o_fileid += MAXOPEN;
+			*o = &opentab[i];
+			memset(opentab[i].o_fd, 0, PGSIZE);
+			return (*o)->o_fileid;
+			break;
+#else
 			/* fall through */
+#endif // VMM_GUEST
 		case 1:
+#ifdef VMM_GUEST
+			if ((uint64_t) opentab[i].o_fd != get_host_fd()) {
+#endif // VMM_GUEST
 
 			opentab[i].o_fileid += MAXOPEN;
 			*o = &opentab[i];
 			memset(opentab[i].o_fd, 0, PGSIZE);
 			return (*o)->o_fileid;
+#ifdef VMM_GUEST
+		        }
+#endif // VMM_GUEST
 	         }
         }
 	return -E_MAX_OPEN;

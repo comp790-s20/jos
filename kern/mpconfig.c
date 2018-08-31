@@ -213,6 +213,10 @@ mp_init(void)
 		}
 	}
 
+	for (i=0; i< NCPU; ++i) {
+		cpus[i].is_vmx_root = false;
+		cpus[i].vmxon_region = 0;
+	}
 
 	bootcpu->cpu_status = CPU_STARTED;
 	if (!ismp) {

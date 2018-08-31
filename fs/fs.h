@@ -46,4 +46,11 @@ int    alloc_block(void);
 /* test.c */
 void   fs_test(void);
 
+#ifdef VMM_GUEST
+/* vmx_host.c */
+uint64_t get_host_fd(); 
+int    host_read(uint32_t secno, void *dst, size_t nsecs);
+int    host_write(uint32_t secno, const void *src, size_t nsecs);
+void   host_ipc_init();
+#endif
 

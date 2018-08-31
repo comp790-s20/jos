@@ -17,11 +17,30 @@
 #include <kern/picirq.h>
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
+#include <kern/time.h>
+#include <kern/pci.h>
+#if defined(TEST_EPT_MAP)
+int test_ept_map(void);
+#endif
 
 uint64_t end_debug;
 
 static void boot_aps(void);
 
+extern unsigned char mpentry_start[], mpentry_end[];
+
+#ifdef VMM_GUEST
+
+static void boot_virtual_aps(void);
+
+int64_t vmcall(int num, int check, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5)
+{
+    int64_t ret;
+    asm volatile("vmcall\n" : "=a" (ret) : "a" (num), "d" (a1), "c" (a2), "b" (a3), "D" (a4), "S" (a5) : "cc", "memory");
+    if(check && ret > 0) panic("vmcall %d returned %d (> 0)", num, ret);
+    return ret;
+}
+#endif
 
 
 void
@@ -42,8 +61,22 @@ i386_init(void)
 
 	cprintf("6828 decimal is %o octal!\n", 6828);
 
+#ifdef VMM_GUEST
+	/* Guest VMX extension exposure check */
+	{
+		uint32_t ecx = 0;
+		cpuid(0x1, NULL, NULL, &ecx, NULL);
+		if (ecx & 0x20)
+			panic("[ERR] VMX extension exposed to guest.\n");
+		else
+			cprintf("VMX extension hidden from guest.\n");
+	}
+#endif
+
+#ifndef VMM_GUEST
 	extern char end[];
 	end_debug = read_section_headers((0x10000+KERNBASE), (uintptr_t)end);
+#endif
 
 	// Lab 2 memory management initialization functions
 	x64_vm_init();
@@ -52,9 +85,11 @@ i386_init(void)
 	env_init();
 	trap_init();
 
+#ifndef VMM_GUEST
 	// Lab 4 multiprocessor initialization functions
 	mp_init();
 	lapic_init();
+#endif
 
 	// Lab 4 multitasking initialization functions
 	pic_init();
@@ -62,8 +97,10 @@ i386_init(void)
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
 
+#ifndef VMM_GUEST
 	// Starting non-boot CPUs
 	boot_aps();
+#endif
 
 
 
@@ -76,6 +113,9 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
+#if defined(TEST_EPT_MAP)
+	test_ept_map();
+#endif
 
 	ENV_CREATE(user_icode, ENV_TYPE_USER);
 #endif // TEST*

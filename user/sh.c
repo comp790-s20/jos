@@ -272,6 +272,7 @@ umain(int argc, char **argv)
 {
 	int r, interactive, echocmds;
 	struct Argstate args;
+	bool auto_terminate = false;
 	interactive = '?';
 	echocmds = 0;
 	argstart(&argc, argv, &args);
@@ -289,6 +290,13 @@ umain(int argc, char **argv)
 		default:
 			usage();
 		}
+	close(0);
+	if ((r = opencons()) < 0)
+		panic("opencons: %e", r);
+	if (r != 0)
+		panic("first opencons used fd %d", r);
+	if ((r = dup(0, 1)) < 0)
+		panic("dup: %e", r);
 	if (argc > 2)
 		usage();
 	if (argc == 2) {
@@ -302,12 +310,20 @@ umain(int argc, char **argv)
 
 	while (1) {
 		char *buf;
+		#ifndef VMM_GUEST
 		buf = readline(interactive ? "$ " : NULL);
+		#else
+		buf = readline(interactive ? "vm$ " : NULL);
+		#endif
 		if (buf == NULL) {
 			if (debug)
 				cprintf("EXITING\n");
 			exit();	// end of file
 		}
+		#ifndef VMM_GUEST
+		if(strcmp(buf, "vmmanager")==0)
+			auto_terminate = true;
+		#endif
 		if(strcmp(buf, "quit")==0)
 			exit();
 		if (debug)
@@ -327,6 +343,8 @@ umain(int argc, char **argv)
 			exit();
 		} else {
 			wait(r);
+			if (auto_terminate)
+				exit();
 		}
 	}
 }

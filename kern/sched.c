@@ -8,6 +8,22 @@
 void sched_halt(void);
 
 
+#ifndef VMM_GUEST
+#include <vmm/vmx.h>
+static int
+vmxon() {
+	int r;
+	if(!thiscpu->is_vmx_root) {
+		r = vmx_init_vmxon();
+		if(r < 0) {
+			cprintf("Error executing VMXON: %e\n", r);
+			return r;
+		}
+		cprintf("VMXON\n");
+	}
+	return 0;
+}
+#endif
 
 // Choose a user environment to run and run it.
 void

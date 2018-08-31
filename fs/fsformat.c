@@ -38,6 +38,7 @@ typedef int bool;
 #define FLAG_ETC 2
 #define FLAG_SBIN 3
 #define FLAG_ROOT 0
+#define FLAG_VMM 4
 
 struct Dir
 {
@@ -229,6 +230,8 @@ main(int argc, char **argv)
 	int flag=FLAG_ROOT;
 	struct Dir bin, sbin;
 	struct File *b, *sb;
+	struct Dir vmm;
+	struct File *v;
 	assert(BLKSIZE % sizeof(struct File) == 0);
 
 	if (argc < 3)
@@ -248,6 +251,8 @@ main(int argc, char **argv)
 	sb = diradd(&root, FTYPE_DIR, "sbin");
 	startdir(sb, &sbin);
 
+	v = diradd(&root, FTYPE_DIR, "vmm");
+	startdir(v, &vmm);
 
 	for (i = 3; i < argc; i++) {
 		if(strcmp("-b", argv[i]) == 0) {
@@ -255,6 +260,9 @@ main(int argc, char **argv)
 			continue;
 		} else if(strcmp("-sb", argv[i]) == 0) {
 			flag = FLAG_SBIN;
+			continue;
+		} else if(strcmp("-g", argv[i]) == 0) {
+			flag = FLAG_VMM;
 			continue;
 		}
 
@@ -268,11 +276,15 @@ main(int argc, char **argv)
 		case FLAG_SBIN:
 			writefile(&sbin, argv[i]);
 			break;
+		case FLAG_VMM:
+			writefile(&vmm, argv[i]);
+			break;
 		}
 	}
 	
 	finishdir(&bin);
 	finishdir(&sbin);
+	finishdir(&vmm);
 	finishdir(&root);
 	finishdisk();
 	return 0;

@@ -210,8 +210,13 @@ boot_alloc(uint32_t n)
 	// the first virtual address that the linker did *not* assign
 	// to any kernel code or global variables.
 	if (!nextfree) {
+#ifdef VMM_GUEST
 		extern char end[];
 		nextfree = ROUNDUP((char *) end, PGSIZE);
+#else
+		extern uintptr_t end_debug;
+		nextfree = ROUNDUP((char *) end_debug, PGSIZE);
+#endif
 	}
 
 	// Allocate a chunk large enough to hold 'n' bytes, then update
@@ -308,11 +313,6 @@ x64_vm_init(void)
 	// Initialize the SMP-related parts of the memory map
 	mem_init_mp();
 
-	check_page_free_list(1);
-	check_page_alloc();
-	page_check();
-	check_page_free_list(0);
-	check_boot_pml4e(boot_pml4e);
 
 	//////////////////////////////////////////////////////////////////////
 	// Permissions: kernel RW, user NONE

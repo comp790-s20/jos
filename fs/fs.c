@@ -97,11 +97,15 @@ fs_init(void)
 	static_assert(sizeof(struct File) == 256);
 
 
+#ifndef VMM_GUEST
 	// Find a JOS disk.  Use the second IDE disk (number 1) if available.
 	if (ide_probe_disk1())
 		ide_set_disk(1);
 	else
 		ide_set_disk(0);
+#else
+	host_ipc_init();
+#endif
 
 
 	bc_init();

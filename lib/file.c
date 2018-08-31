@@ -2,6 +2,9 @@
 #include <inc/string.h>
 #include <inc/lib.h>
 
+#ifdef VMM_GUEST
+#include  <inc/vmx.h>
+#endif
 
 #define debug 0
 
