@@ -89,6 +89,6 @@ pte_t *pgdir_walk(pde_t *pgdir, const void *va, int create);
 
 pte_t *pml4e_walk(pml4e_t *pml4e, const void *va, int create);
 
-pde_t *pdpe_walk(pdpe_t *pdpe,const void *va,int create);
+pte_t *pdpe_walk(pdpe_t *pdpe,const void *va,int create);
 
 #endif /* !JOS_KERN_PMAP_H */
