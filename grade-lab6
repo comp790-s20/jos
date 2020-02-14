@@ -120,7 +120,7 @@ def test_testoutput_5():
     test_testoutput_helper(5)
 
 socket.setdefaulttimeout(10)
-    
+
 @test(3, "testoutput [100 packets]")
 def test_testoutput_100():
     test_testoutput_helper(100)
@@ -168,8 +168,8 @@ def test_testinput_helper(count):
     # Get the packets QEMU actually received, since there's some
     # header information we can't easily guess.
     pcap = list(read_pcap())
-    if len(pcap) != count + 2:
-        raise RuntimeError("pcap contains only %d packets" % len(pcap))
+    assert len(pcap) == count + 2, ("pcap contains only %d packets" % len(pcap))
+
     # Strip transmitted ARP request
     assert pcap.pop(0)[:6] == b"\xff" * 6, "First packet is not ARP request"
     # The E1000 pads packets out to a 60 byte frame

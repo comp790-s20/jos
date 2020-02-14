@@ -50,6 +50,8 @@ def test(points, title=None, parent=None):
                 fn()
             except AssertionError as e:
                 fail = str(e)
+                if not fail:
+                    fail = 'See log for error'
 
             # Display and handle test result
             POSSIBLE += points
