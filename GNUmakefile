@@ -160,7 +160,6 @@ include kern/Makefrag
 include lib/Makefrag
 include user/Makefrag
 include fs/Makefrag
-include net/Makefrag
 ifndef GUEST_KERN
 include vmm/Makefrag
 endif
