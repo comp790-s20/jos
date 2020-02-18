@@ -93,11 +93,6 @@ i386_init(void)
 
 	// Lab 4 multitasking initialization functions
 	pic_init();
-#ifndef VMM_GUEST  // Does not work in guest mode
-	// Lab 6 hardware initialization functions
-	time_init();
-	pci_init();
-#endif
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
