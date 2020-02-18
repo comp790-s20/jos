@@ -12,11 +12,18 @@ def matchtest(parent, name, points, *args, **kw):
 
 @test(0, "VMM Tests")
 def test_vm():
-    r.user_test("vmm")
-matchtest(test_vm, "sys_ept_map seems to work correctly", 5)
+    r.user_test("vmm", timeout=240)
 
-matchtest(test_vm, "VMX extension hidden from guest", 5)
+@test(5, "EPT map", parent=test_vm)
+def test_ept():
+    r.match(r"Cheers! sys_ept_map seems to work correctly.")
 
-matchtest(test_vm, "turtles all the way", 10)
+@test(5, "VMX hidden", parent=test_vm)
+def test_ept():
+    r.match(r"VMX extension hidden from guest")
+
+@test(10, "Turtles", parent=test_vm)
+def test_ept():
+    r.match(r".*turtles all the way")
 
 run_tests()

@@ -57,7 +57,7 @@ bc_pgfault(struct UTrapframe *utf)
 #else  // VMM GUEST
 
 	/* Your code here */
-	panic("Host read not implemented!\n");
+	panic("Guest read not implemented!\n");
 #endif // VMM_GUEST
 
 

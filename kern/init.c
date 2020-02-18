@@ -93,6 +93,11 @@ i386_init(void)
 
 	// Lab 4 multitasking initialization functions
 	pic_init();
+#ifndef VMM_GUEST  // Does not work in guest mode
+	// Lab 6 hardware initialization functions
+	time_init();
+	pci_init();
+#endif
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
@@ -108,14 +113,15 @@ i386_init(void)
 	// Start fs.
 	ENV_CREATE(fs_fs, ENV_TYPE_FS);
 
+#if defined(TEST_EPT_MAP)
+	test_ept_map();
+#endif
+
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-#if defined(TEST_EPT_MAP)
-	test_ept_map();
-#endif
 
 	ENV_CREATE(user_icode, ENV_TYPE_USER);
 #endif // TEST*
@@ -148,7 +154,7 @@ boot_aps(void)
 		if (c == cpus + cpunum())  // We've started already.
 			continue;
 
-		// Tell mpentry.S what stack to use 
+		// Tell mpentry.S what stack to use
 		mpentry_kstack = percpu_kstacks[c - cpus] + KSTKSIZE;
 		// Start the CPU at mpentry_start
 		lapic_startap(c->cpu_id, PADDR(code));
@@ -162,7 +168,7 @@ boot_aps(void)
 void
 mp_main(void)
 {
-	// We are in high EIP now, safe to switch to kern_pgdir 
+	// We are in high EIP now, safe to switch to kern_pgdir
 	lcr3(boot_cr3);
 	cprintf("SMP: CPU %d starting\n", cpunum());
 

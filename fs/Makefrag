@@ -17,6 +17,8 @@ ifdef GUEST_KERN
 FSIMGTXTFILES +=	fs/motd_guest
 endif
 
+FSIMGTXTFILES :=	$(FSIMGTXTFILES) \
+			fs/index.html
 
 USERAPPS :=		$(USERAPPS) \
 			$(OBJDIR)/user/cat \
@@ -86,7 +88,7 @@ $(OBJDIR)/fs/clean-fs.img: $(OBJDIR)/fs/fsformat $(FSIMGFILES)
 	$(V)mkdir -p $(@D)
 
 ifndef GUEST_KERN
-	$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 4096  $(FSIMGTXTFILES) -b $(USERAPPS) -sb $(ROOTAPPS) -g $(GUESTKERNELS)
+	$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 8192  $(FSIMGTXTFILES) -b $(USERAPPS) -sb $(ROOTAPPS) -g $(GUESTKERNELS)
 else
 	$(V)$(OBJDIR)/fs/fsformat $(OBJDIR)/fs/clean-fs.img 1024 $(FSIMGTXTFILES) -b $(USERAPPS) -sb $(ROOTAPPS)
 endif
@@ -100,3 +102,4 @@ all: $(OBJDIR)/fs/fs.img
 #all: $(addsuffix .sym, $(USERAPPS))
 
 #all: $(addsuffix .asm, $(USERAPPS))
+

@@ -95,6 +95,10 @@ CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O0 -fno-builtin -I$(TOP) -MD
 CFLAGS += -fno-omit-frame-pointer -mno-red-zone
 CFLAGS += -Wall -Wno-format -Wno-unused -Werror -gdwarf-2 -fvar-tracking
 
+CFLAGS += -I$(TOP)/net/lwip/include \
+	  -I$(TOP)/net/lwip/include/ipv4 \
+	  -I$(TOP)/net/lwip/jos
+
 # Add -fno-stack-protector if the option exists.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
@@ -124,6 +128,7 @@ all:
 	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
 	   $(OBJDIR)/user/%.o
 
+EXTRA_HOST_KERN_CFLAGS :=
 KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -DDWARF_SUPPORT -gdwarf-2 -mcmodel=large -m64
 BOOT_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gdwarf-2 -m32
 USER_CFLAGS := $(CFLAGS) -DJOS_USER -gdwarf-2 -mcmodel=large -m64
@@ -132,7 +137,7 @@ ifdef GUEST_KERN
 KERN_CFLAGS += -DVMM_GUEST
 USER_CFLAGS += -DVMM_GUEST
 else
-KERN_CFLAGS += -DVMM_HOST
+KERN_CFLAGS += -DVMM_HOST -DTEST_EPT_MAP=1
 USER_CFLAGS += -DVMM_HOST
 endif
 
@@ -155,6 +160,7 @@ include kern/Makefrag
 include lib/Makefrag
 include user/Makefrag
 include fs/Makefrag
+include net/Makefrag
 ifndef GUEST_KERN
 include vmm/Makefrag
 endif
@@ -163,6 +169,9 @@ endif
 
 CPUS ?= 1
 
+PORT7	:= $(shell expr $(GDBPORT) + 1)
+PORT80	:= $(shell expr $(GDBPORT) + 2)
+
 ## We need KVM for qemu to export VMX
 QEMUOPTS = -cpu qemu64,+vmx -enable-kvm -m 256 -drive format=raw,file=$(OBJDIR)/kern/kernel.img -serial mon:stdio -gdb tcp::$(GDBPORT)
 QEMUOPTS += $(shell if $(QEMU) -nographic -help | grep -q '^-D '; then echo '-D qemu.log'; fi)
@@ -170,6 +179,8 @@ IMAGES = $(OBJDIR)/kern/kernel.img
 QEMUOPTS += -smp $(CPUS)
 QEMUOPTS += -hdb $(OBJDIR)/fs/fs.img
 IMAGES += $(OBJDIR)/fs/fs.img
+QEMUOPTS += -net user -net nic,model=e1000 -redir tcp:$(PORT7)::7 \
+	   -redir tcp:$(PORT80)::80 -redir udp:$(PORT7)::7 -net dump,file=qemu.pcap
 QEMUOPTS += $(QEMUEXTRA)
 
 
@@ -178,6 +189,8 @@ QEMUOPTS += $(QEMUEXTRA)
 	sed -e "s/localhost:1234/localhost:$(GDBPORT)/" -e "s/jumpto_longmode/*0x$(LONGMODE)/" < $^ > $@
 
 pre-qemu: .gdbinit
+#	QEMU doesn't truncate the pcap file.  Work around this.
+	@rm -f qemu.pcap
 
 
 guestvm: $(GUESTDIR)/$(OBJDIR)/kern/kernel $(GUESTDIR)/$(OBJDIR)/boot/boot
@@ -256,7 +269,7 @@ grade:
 	./grade-lab$(LAB) $(GRADEFLAGS)
 
 update:
-	git pull https://github.com/comp790-s20/jos.git
+       git pull https://github.com/comp790-s20/jos.git
 
 handin: realclean
 	@if [ `git status --porcelain| wc -l` != 0 ] ; then echo "\n\n\n\n\t\tWARNING: YOU HAVE UNCOMMITTED CHANGES\n\n    Consider committing any pending changes and rerunning make handin.\n\n\n\n"; fi
@@ -288,6 +301,7 @@ handin-prep:
 	@./handin-prep
 
 # For test runs
+prep-net_%: override INIT_CFLAGS+=-DTEST_NO_NS
 
 prep-%:
 	$(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
@@ -303,6 +317,23 @@ run-%-nox: prep-% pre-qemu
 
 run-%: prep-% pre-qemu
 	$(QEMU) $(QEMUOPTS)
+
+# For network connections
+which-ports:
+	@echo "Local port $(PORT7) forwards to JOS port 7 (echo server)"
+	@echo "Local port $(PORT80) forwards to JOS port 80 (web server)"
+
+nc-80:
+	nc localhost $(PORT80)
+
+nc-7:
+	nc localhost $(PORT7)
+
+telnet-80:
+	telnet localhost $(PORT80)
+
+telnet-7:
+	telnet localhost $(PORT7)
 
 # This magic automatically generates makefile dependencies
 # for header files included from C source files we compile,
