@@ -176,14 +176,14 @@ int test_ept_map(void)
 	curenv = srcenv;
 
 	/* Check if sys_ept_map correctly verify the target env */
-	if ((r = env_guest_alloc(&dstenv, srcenv->env_id)) < 0)
+	if ((r = env_alloc(&dstenv, srcenv->env_id)) < 0)
 		panic("Failed to allocate env (%d)\n", r);
 	if ((r = _export_sys_ept_map(srcenv->env_id, UTEMP, dstenv->env_id, UTEMP, __EPTE_READ)) < 0)
 		cprintf("EPT map to non-guest env failed as expected (%d).\n", r);
 	else
 		panic("sys_ept_map success on non-guest env.\n");
 
-	/*env_destroy(dstenv);*/
+	env_destroy(dstenv);
 
 	if ((r = env_guest_alloc(&dstenv, srcenv->env_id)) < 0)
 		panic("Failed to allocate guest env (%d)\n", r);
