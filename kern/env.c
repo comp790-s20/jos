@@ -33,7 +33,7 @@ static struct Env *env_free_list;	// Free environment list
 // Set up global descriptor table (GDT) with separate segments for
 // kernel mode and user mode.  Segments serve many purposes on the x86.
 // We don't use any of their memory-mapping capabilities, but we need
-// them to switch privilege levels. 
+// them to switch privilege levels.
 //
 // The kernel and user segments are identical except for the DPL.
 // To load the SS register, the CPL must equal the DPL.  Thus,
@@ -182,7 +182,7 @@ env_setup_vm(struct Env *e)
 	//    - The VA space of all envs is identical above UTOP
 	//	(except at UVPT, which we've set below).
 	//	See inc/memlayout.h for permissions and layout.
-	//	Hint: Figure out which entry in the pml4e maps addresses 
+	//	Hint: Figure out which entry in the pml4e maps addresses
 	//	      above UTOP.
 	//	(Make sure you got the permissions right in Lab 2.)
 	//    - The initial VA below UTOP is empty.
@@ -301,8 +301,8 @@ void env_guest_free(struct Env *e) {
 	// Free IO bitmaps page.
 	page_decref(pa2page(PADDR(e->env_vmxinfo.io_bmap_a)));
 	page_decref(pa2page(PADDR(e->env_vmxinfo.io_bmap_b)));
-    
-	// Free the host pages that were allocated for the guest and 
+
+	// Free the host pages that were allocated for the guest and
 	// the EPT tables itself.
 	free_guest_mem(e->env_pml4e);
 
@@ -498,7 +498,7 @@ env_free(struct Env *e)
 	uint64_t pdeno, pteno;
 	physaddr_t pa;
 
-#ifndef VMM_GUEST 
+#ifndef VMM_GUEST
 	if(e->env_type == ENV_TYPE_GUEST) {
 		env_guest_free(e);
 		return;
@@ -515,44 +515,46 @@ env_free(struct Env *e)
 	// cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 
 	// Flush all mapped pages in the user portion of the address space
-	pdpe_t *env_pdpe = KADDR(PTE_ADDR(e->env_pml4e[0]));
-	int pdeno_limit;
-	uint64_t pdpe_index;
-	// using 3 instead of NPDPENTRIES as we have only first three indices
-	// set for 4GB of address space.
-	for(pdpe_index=0;pdpe_index<=3;pdpe_index++){
-		if(!(env_pdpe[pdpe_index] & PTE_P))
-			continue;
-		pde_t *env_pgdir = KADDR(PTE_ADDR(env_pdpe[pdpe_index]));
-		pdeno_limit  = pdpe_index==3?PDX(UTOP):PDX(0xFFFFFFFF);
-		static_assert(UTOP % PTSIZE == 0);
-		for (pdeno = 0; pdeno < pdeno_limit; pdeno++) {
-
-			// only look at mapped page tables
-			if (!(env_pgdir[pdeno] & PTE_P))
+	if (e->env_pml4e[0] & PTE_P) {
+		pdpe_t *env_pdpe = KADDR(PTE_ADDR(e->env_pml4e[0]));
+		int pdeno_limit;
+		uint64_t pdpe_index;
+		// using 3 instead of NPDPENTRIES as we have only first three indices
+		// set for 4GB of address space.
+		for(pdpe_index=0;pdpe_index<=3;pdpe_index++){
+			if(!(env_pdpe[pdpe_index] & PTE_P))
 				continue;
-			// find the pa and va of the page table
-			pa = PTE_ADDR(env_pgdir[pdeno]);
-			pt = (pte_t*) KADDR(pa);
+			pde_t *env_pgdir = KADDR(PTE_ADDR(env_pdpe[pdpe_index]));
+			pdeno_limit  = pdpe_index==3?PDX(UTOP):PDX(0xFFFFFFFF);
+			static_assert(UTOP % PTSIZE == 0);
+			for (pdeno = 0; pdeno < pdeno_limit; pdeno++) {
 
-			// unmap all PTEs in this page table
-			for (pteno = 0; pteno < PTX(~0); pteno++) {
-				if (pt[pteno] & PTE_P){
-					page_remove(e->env_pml4e, PGADDR((uint64_t)0,pdpe_index,pdeno, pteno, 0));
+				// only look at mapped page tables
+				if (!(env_pgdir[pdeno] & PTE_P))
+					continue;
+				// find the pa and va of the page table
+				pa = PTE_ADDR(env_pgdir[pdeno]);
+				pt = (pte_t*) KADDR(pa);
+
+				// unmap all PTEs in this page table
+				for (pteno = 0; pteno < PTX(~0); pteno++) {
+					if (pt[pteno] & PTE_P){
+						page_remove(e->env_pml4e, PGADDR((uint64_t)0,pdpe_index,pdeno, pteno, 0));
+					}
 				}
-			}
 
-			// free the page table itself
-			env_pgdir[pdeno] = 0;
+				// free the page table itself
+				env_pgdir[pdeno] = 0;
+				page_decref(pa2page(pa));
+			}
+			// free the page directory
+			pa = PTE_ADDR(env_pdpe[pdpe_index]);
+			env_pdpe[pdpe_index] = 0;
 			page_decref(pa2page(pa));
 		}
-		// free the page directory
-		pa = PTE_ADDR(env_pdpe[pdpe_index]);
-		env_pdpe[pdpe_index] = 0;
-		page_decref(pa2page(pa));
+		// free the page directory pointer
+		page_decref(pa2page(PTE_ADDR(e->env_pml4e[0])));
 	}
-	// free the page directory pointer
-	page_decref(pa2page(PTE_ADDR(e->env_pml4e[0])));
 	// free the page map level 4 (PML4)
 	e->env_pml4e[0] = 0;
 	pa = e->env_cr3;
