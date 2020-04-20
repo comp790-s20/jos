@@ -339,8 +339,8 @@ sys_vmx_incr_vmdisk_number() {
 //		address space.
 //	-E_NO_MEM if there's no memory to allocate any necessary page tables.
 //
-// Hint: The TA solution uses ept_map_page().  A guest environment uses
-//       env_pml4e to store the root of the extended page tables.
+// Hint: The TA solution uses ept_page_insert(), which should handle incrementing the reference count.
+//       A guest environment uses env_pml4e to store the root of the extended page tables.
 //
 static int
 sys_ept_map(envid_t srcenvid, void *srcva,

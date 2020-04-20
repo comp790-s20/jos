@@ -106,29 +106,17 @@ void free_guest_mem(epte_t* eptrt) {
 //
 // Return 0 on success, <0 on failure.
 //
-int ept_page_insert(epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm) {
-
-    /* Your code here */
-    panic("ept_page_insert not implemented\n");
-    return 0;
-}
-
-// Map host physical page pp to guest physical address gpa,
-// with permissions perm.  eptrt is a pointer to the extended
-// page table root.
-//
-// Return 0 on success.
-//
 // If the mapping already exists and overwrite is set to 0,
 //  return -E_INVAL.
 //
 // Hint: use ept_lookup_gpa to create the intermediate
 //       ept levels, and return the final epte_t pointer.
 //       You should set the type to EPTE_TYPE_WB and set __EPTE_IPAT flag.
-int ept_map_page( epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm, int overwrite) {
-    /* Your code here */
-    panic("ept_map_page not implemented\n");
+//
+int ept_page_insert(epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm, int overwrite) {
 
+    /* Your code here */
+    panic("ept_page_insert not implemented\n");
     return 0;
 }
 
@@ -137,14 +125,12 @@ int ept_alloc_static(epte_t *eptrt, struct VmxGuestInfo *ginfo) {
 
     for(i=0x0; i < 0xA0000; i+=PGSIZE) {
         struct PageInfo *p = page_alloc(0);
-        p->pp_ref += 1;
-        int r = ept_map_page(eptrt, p, (void *)i, __EPTE_FULL, 0);
+        int r = ept_page_insert(eptrt, p, (void *)i, __EPTE_FULL, 0);
     }
 
     for(i=0x100000; i < ginfo->phys_sz; i+=PGSIZE) {
         struct PageInfo *p = page_alloc(0);
-        p->pp_ref += 1;
-        int r = ept_map_page(eptrt, p, (void *)i, __EPTE_FULL, 0);
+        int r = ept_page_insert(eptrt, p, (void *)i, __EPTE_FULL, 0);
     }
     return 0;
 }
@@ -258,25 +244,25 @@ int test_ept_map(void)
 		cprintf("EPT mapping address looks good: %x vs %x.\n",
 				page2pa(pp), epte_addr(*epte));
 
-	/* Check if the ept_map_page handle the overwrite correctly */
-	if ((r = ept_map_page(dstenv->env_pml4e, pp, UTEMP, __EPTE_READ, 0)) < 0)
-		cprintf("ept_map_page handle not overwriting correctly\n");
+	/* Check if the ept_page_insert handle the overwrite correctly */
+	if ((r = ept_page_insert(dstenv->env_pml4e, pp, UTEMP, __EPTE_READ, 0)) < 0)
+		cprintf("ept_page_insert handle not overwriting correctly\n");
 	else
-		panic("ept_map_hva2gpa success on overwriting with non-overwrite parameter\n");
+		panic("ept_page_insert success on overwriting with non-overwrite parameter\n");
 
-	/* Check if the ept_map_page can map a page */
-	if ((r = ept_map_page(dstenv->env_pml4e, pp, UTEMP, __EPTE_READ, 1)) < 0)
+	/* Check if the ept_page_insert can map a page */
+	if ((r = ept_page_insert(dstenv->env_pml4e, pp, UTEMP, __EPTE_READ, 1)) < 0)
 		panic ("Failed on mapping a page from kva to gpa\n");
 	else
-		cprintf("ept_map_page success on mapping a page\n");
+		cprintf("ept_page_insert success on mapping a page\n");
 
 	/* Check if the map_hva2gpa set permission correctly */
 	if ((r = ept_lookup_gpa(dstenv->env_pml4e, UTEMP, 0, &epte)) < 0)
 		panic("Failed on ept_lookup_gpa (%d)\n", r);
 	if (((uint64_t)*epte & (~EPTE_ADDR)) == (__EPTE_READ | __EPTE_TYPE( EPTE_TYPE_WB ) | __EPTE_IPAT))
-		cprintf("ept_map_page success on perm check\n");
+		cprintf("ept_page_insert success on perm check\n");
 	else
-		panic("ept_map_page didn't set permission correctly\n");
+		panic("ept_page_insert didn't set permission correctly\n");
 	/* Go through the extended page table to check if the immediate mappings are correct */
 	dir = dstenv->env_pml4e;
 	for ( i = EPT_LEVELS - 1; i > 0; --i ) {

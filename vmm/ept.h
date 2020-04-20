@@ -9,11 +9,10 @@
 
 typedef uint64_t epte_t;
 
-int ept_map_page( epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm, int overwrite );
 int ept_alloc_static(epte_t *eptrt, struct VmxGuestInfo *ginfo);
 void free_guest_mem(epte_t* eptrt);
 void ept_gpa2hva(epte_t* eptrt, void *gpa, void **hva);
-int ept_page_insert(epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm);
+int ept_page_insert(epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm, int overwrite);
 
 #define EPT_LEVELS 4
 

@@ -144,16 +144,15 @@ handle_eptviolation(uint64_t *eptrt, struct VmxGuestInfo *ginfo) {
 			cprintf("vmm: handle_eptviolation: Failed to allocate a page for guest---out of memory.\n");
 			return false;
 		}
-		p->pp_ref += 1;
-		r = ept_map_page(eptrt,
-				 p, (void *)ROUNDDOWN(gpa, PGSIZE), __EPTE_FULL, 0);
+		r = ept_page_insert(eptrt,
+				    p, (void *)ROUNDDOWN(gpa, PGSIZE), __EPTE_FULL, 0);
 		assert(r >= 0);
 		/* cprintf("EPT violation for gpa:%x mapped KVA:%x\n", gpa, page2kva(p)); */
 		return true;
 	} else if (gpa >= CGA_BUF && gpa < CGA_BUF + PGSIZE) {
 		// FIXME: This give direct access to VGA MMIO region.
-		r = ept_map_page(eptrt, pa2page(PADDR(((void *) (KERNBASE + CGA_BUF)))),
-				 (void *)CGA_BUF, __EPTE_FULL, 0);
+		r = ept_page_insert(eptrt, pa2page(PADDR(((void *) (KERNBASE + CGA_BUF)))),
+				    (void *)CGA_BUF, __EPTE_FULL, 0);
 
 		assert(r >= 0);
 		return true;
