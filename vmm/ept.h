@@ -5,10 +5,11 @@
 #include <inc/mmu.h>
 #include <vmm/vmx.h>
 #include <inc/ept.h>
+#include <inc/memlayout.h>
 
 typedef uint64_t epte_t;
 
-int ept_map_hva2gpa( epte_t* eptrt, void* hva, void* gpa, int perm, int overwrite );
+int ept_map_page( epte_t* eptrt, struct PageInfo* pp, void* gpa, int perm, int overwrite );
 int ept_alloc_static(epte_t *eptrt, struct VmxGuestInfo *ginfo);
 void free_guest_mem(epte_t* eptrt);
 void ept_gpa2hva(epte_t* eptrt, void *gpa, void **hva);
