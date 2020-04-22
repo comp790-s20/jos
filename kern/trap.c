@@ -109,15 +109,15 @@ trap_init_percpu(void)
 	// LAB 4: Your code here:
 
 
-	int gd_tss = (GD_TSS0 >> 3) + cpunum()*2;
+	// Setup a TSS so that we get the right stack
+	// when we trap to the kernel.
+	ts.ts_esp0 = KSTACKTOP;
 
-	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP 
-		- (KSTKSIZE + KSTKGAP) * cpunum();
-
-	SETTSS((struct SystemSegdesc64 *)((gdt_pd>>16)+40+cpunum()*16),STS_T64A, (uint64_t) (&thiscpu->cpu_ts),sizeof(struct Taskstate), 0);
-
-	// Load the TSS
-	ltr(gd_tss << 3);
+	// Initialize the TSS slot of the gdt.
+	SETTSS((struct SystemSegdesc64 *)((gdt_pd>>16)+40),STS_T64A, (uint64_t) (&ts),sizeof(struct Taskstate), 0);
+	// Load the TSS selector (like other segment selectors, the
+	// bottom three bits are special; we leave them 0)
+	ltr(GD_TSS0);
 
 	// Load the IDT
 	lidt(&idt_pd);
@@ -194,6 +194,12 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+
+	// Add time tick increment to clock interrupts.
+	// Be careful! In multiprocessors, clock interrupts are
+	// triggered on every CPU.
+	// LAB 6: Your code here.
+
 
 	// Handle keyboard and serial interrupts.
 	// LAB 5: Your code here.
